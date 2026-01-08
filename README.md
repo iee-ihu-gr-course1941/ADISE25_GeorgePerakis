@@ -1,10 +1,10 @@
 # ADISE25_GeorgePerakis
-PHP must be installed on your system
 
 Game Flow (PS_requests Order)
 
-The following commands must be executed in order. Also start the server before any commands are excecuted. 
-The relevant curls are in the PS_requests.txt. These commands are made for PowerShell.
+The following commands must be executed in order.
+The relevant curls are in the PS_requests.txt. 
+These commands are made for PowerShell.
 
 1. Login
 Authenticate the player or players.
