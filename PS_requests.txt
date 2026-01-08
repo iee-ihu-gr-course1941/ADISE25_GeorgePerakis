@@ -1,0 +1,29 @@
+# Login / Create User
+Invoke-RestMethod -Uri http://localhost:8000/api/auth/login.php `
+                  -Method POST `
+                  -Body '{"username":"giorgos"}' `
+                  -ContentType "application/json" | ConvertTo-Json -Depth 5
+
+# Create a new game
+Invoke-RestMethod -Uri http://localhost:8000/api/game/create_game.php `
+                  -Method POST `
+                  -Body '{"player_id":1}' `
+                  -ContentType "application/json" | ConvertTo-Json -Depth 5
+
+# Join the game as player 2
+Invoke-RestMethod -Uri http://localhost:8000/api/game/join_game.php `
+                  -Method POST `
+                  -Body '{"game_id":1,"player2_id":2}' `
+                  -ContentType "application/json" | ConvertTo-Json -Depth 5
+
+# Deal cards
+Invoke-RestMethod -Uri http://localhost:8000/api/game/deal_cards.php `
+                  -Method POST `
+                  -Body '{"game_id":1}' `
+                  -ContentType "application/json" | ConvertTo-Json -Depth 5
+
+# Play a card
+Invoke-RestMethod -Uri http://localhost:8000/api/game/play_card.php `
+                  -Method POST `
+                  -Body '{"game_id":1,"player_id":1,"position":5}' `
+                  -ContentType "application/json" | ConvertTo-Json -Depth 5
