@@ -5,7 +5,7 @@ $user = $DB_USER;
 $pass = $DB_PASS;
 
 if (gethostname() == 'users.iee.ihu.gr') {
-    $dsn = "mysql:unix_socket=/home/student/iee/mysql/run/mysql.sock;dbname=$db;charset=utf8";
+    $dsn = "mysql:unix_socket=/home/student/iee/2021/mysql/run/mysql.sock;dbname=$db;charset=utf8";
 } else {
     $dsn = "mysql:host=localhost;dbname=$db;charset=utf8";
 }
