@@ -11,14 +11,13 @@ if (!isset($data['game_id'], $data['player_id'], $data['position'])) {
 
 $game_id   = $data['game_id'];
 $player_id = $data['player_id'];
-$position  = (int)$data['position']; // 1-based index
+$position  = (int)$data['position']; 
 
 if ($position < 1) {
     echo json_encode(["error" => "Position must be 1 or higher"]);
     exit;
 }
 
-// Fetch game
 $stmt = $pdo->prepare("SELECT * FROM games WHERE id = ?");
 $stmt->execute([$game_id]);
 $game = $stmt->fetch();
@@ -28,16 +27,13 @@ if (!$game) {
     exit;
 }
 
-// Check turn
 if ($game['current_turn'] && $game['current_turn'] != $player_id) {
     echo json_encode(["error" => "Not your turn"]);
     exit;
 }
 
-// Determine hand location
 $handLocation = $player_id == $game['player1_id'] ? 'p1_hand' : 'p2_hand';
 
-// Fetch all cards in hand, order consistently
 $stmt = $pdo->prepare("
     SELECT gc.card_id, c.suit, c.value
     FROM game_cards gc
@@ -53,11 +49,9 @@ if ($position > count($hand)) {
     exit;
 }
 
-// Pick the card at the given position
 $playedCard = $hand[$position - 1];
-$card_id = $playedCard['card_id']; // use for further updates
+$card_id = $playedCard['card_id']; 
 
-// Fetch all table cards, newest first using played_at
 $stmt = $pdo->prepare("
     SELECT gc.card_id, c.suit, c.value
     FROM game_cards gc
@@ -68,10 +62,9 @@ $stmt = $pdo->prepare("
 $stmt->execute([$game_id]);
 $tableCards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Determine captured cards based on last card on table
 $capturedCards = [];
 $isXeri = false;
-$lastCard = reset($tableCards); // newest card is first
+$lastCard = reset($tableCards); 
 
 if ($lastCard && $lastCard['value'] === $playedCard['value']) {
     if (count($tableCards) === 1) {
@@ -87,16 +80,13 @@ if ($lastCard && $lastCard['value'] === $playedCard['value']) {
             ->execute([$capturedLocation, $game_id]);
     }
 } else {
-    // No capture → move played card to table with played_at = NOW()
     $pdo->prepare("UPDATE game_cards SET location = 'table', played_at = NOW() WHERE game_id = ? AND card_id = ?")
         ->execute([$game_id, $card_id]);
 }
 
-// Switch turn
 $nextTurn = $player_id == $game['player1_id'] ? $game['player2_id'] : $game['player1_id'];
 $pdo->prepare("UPDATE games SET current_turn = ? WHERE id = ?")->execute([$nextTurn, $game_id]);
 
-// Function to get current board
 function getGameBoard($pdo, $game_id) {
     $stmt = $pdo->prepare("
         SELECT gc.card_id, c.suit, c.value, gc.location
@@ -114,7 +104,7 @@ function getGameBoard($pdo, $game_id) {
         'table' => [],
         'p1_captured' => [],
         'p2_captured' => [],
-        'deck' => 0 // just store number of cards remaining
+        'deck' => 0 
     ];
 
     foreach ($cards as $c) {
@@ -123,7 +113,7 @@ function getGameBoard($pdo, $game_id) {
         } else {
             $str = strtoupper(substr($c['suit'],0,1)) . $c['value'];
             if ($c['location'] === 'table') {
-                $board['table'][] = $str; // newest first because of played_at DESC
+                $board['table'][] = $str; 
             } else {
                 $board[$c['location']][] = $str;
             }
@@ -134,7 +124,6 @@ function getGameBoard($pdo, $game_id) {
 }
 
 
-// Return response
 echo json_encode([
     "status" => "ok",
     "game_id" => $game_id,

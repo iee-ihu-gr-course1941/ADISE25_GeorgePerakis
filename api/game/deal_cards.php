@@ -11,7 +11,6 @@ if (!isset($data['game_id'])) {
 
 $game_id = $data['game_id'];
 
-// Fetch game
 $stmt = $pdo->prepare("SELECT * FROM games WHERE id = ?");
 $stmt->execute([$game_id]);
 $game = $stmt->fetch();
@@ -21,9 +20,6 @@ if (!$game) {
     exit;
 }
 
-// -----------------------------
-// Initialize deck if empty
-// -----------------------------
 $stmt = $pdo->prepare("SELECT COUNT(*) FROM game_cards WHERE game_id = ?");
 $stmt->execute([$game_id]);
 $total_cards = $stmt->fetchColumn();
@@ -36,9 +32,6 @@ if ($total_cards == 0) {
     }
 }
 
-// -----------------------------
-// Fetch deck
-// -----------------------------
 $stmt = $pdo->prepare("
     SELECT gc.card_id, c.suit, c.value
     FROM game_cards gc
@@ -48,9 +41,6 @@ $stmt = $pdo->prepare("
 $stmt->execute([$game_id]);
 $deck = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// -----------------------------
-// Count player hands
-// -----------------------------
 $stmt = $pdo->prepare("
     SELECT 
         SUM(location='p1_hand') as p1_count, 
@@ -64,18 +54,12 @@ $handsCounts = $stmt->fetch(PDO::FETCH_ASSOC);
 $p1_hand_count = $handsCounts['p1_count'];
 $p2_hand_count = $handsCounts['p2_count'];
 
-// -----------------------------
-// Auto-finish game if deck is low and hands empty
-// -----------------------------
 if (count($deck) < 36 && $p1_hand_count == 0 && $p2_hand_count == 0) {
     $stmt = $pdo->prepare("UPDATE games SET status = 'finished' WHERE id = ?");
     $stmt->execute([$game_id]);
-    $game['status'] = 'finished'; // Update variable to trigger finished logic
+    $game['status'] = 'finished'; 
 }
 
-// -----------------------------
-// Handle finished game
-// -----------------------------
 if ($game['status'] === 'finished') {
     $stmt = $pdo->prepare("
         SELECT gc.location, c.suit, c.value
@@ -129,9 +113,6 @@ if ($game['status'] === 'finished') {
     exit;
 }
 
-// -----------------------------
-// Hands are not empty check
-// -----------------------------
 if ($p1_hand_count > 0 || $p2_hand_count > 0) {
     echo json_encode([
         "status" => "ok",
@@ -143,9 +124,6 @@ if ($p1_hand_count > 0 || $p2_hand_count > 0) {
     exit;
 }
 
-// -----------------------------
-// Shuffle and deal cards
-// -----------------------------
 shuffle($deck);
 $player1_cards = array_splice($deck, 0, 6);
 $player2_cards = array_splice($deck, 0, 6);
