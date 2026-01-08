@@ -1,23 +1,19 @@
 <?php
-require_once 'db_upass.php';
+$host='localhost';
+$db = 'adise25';
+require_once "db_upass.php";
 
-// Path to MySQL socket
-$socket_path = '/home/student/iee/2021/mysql/run/mysql.sock';
+$user=$DB_USER;
+$pass=$DB_PASS;
 
-try {
-    $pdo = new PDO(
-        "mysql:dbname=adise25;unix_socket=$socket_path;charset=utf8mb4",
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]
-    );
-} catch (PDOException $e) {
-    echo json_encode([
-        "error" => "Database connection failed",
-        "message" => $e->getMessage()
-    ]);
-    exit;
+
+if(gethostname()=='users.iee.ihu.gr') {
+	$mysqli = new mysqli($host, $user, $pass, $db,null,'/home/staff/asidirop/mysql/run/mysql.sock');
+} else {
+        $mysqli = new mysqli($host, $user, $pass, $db);
 }
+
+if ($mysqli->connect_errno) {
+    echo "Failed to connect to MySQL: (" . 
+    $mysqli->connect_errno . ") " . $mysqli->connect_error;
+}?>
