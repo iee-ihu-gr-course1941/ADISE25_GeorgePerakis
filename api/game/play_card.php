@@ -66,11 +66,20 @@ $capturedCards = [];
 $isXeri = false;
 $lastCard = reset($tableCards); 
 
-if ($lastCard && $lastCard['value'] === $playedCard['value']) {
+if ($lastCard && ($lastCard['value'] === $playedCard['value'] || $playedCard['value'] === 'J')) {
     if (count($tableCards) === 1) {
-        $isXeri = true;
-        $column = $player_id == $game['player1_id'] ? 'p1_xeri_count' : 'p2_xeri_count';
-        $pdo->prepare("UPDATE games SET $column = $column + 1 WHERE id = ?")->execute([$game_id]);
+        if ($lastCard['value'] === 'J')
+        {
+            $isBalesXeri = true;
+            $column = $player_id == $game['player1_id'] ? 'p1_xeri_bales_count' : 'p2_xeri_bales_count';
+            $pdo->prepare("UPDATE games SET $column = $column + 1 WHERE id = ?")->execute([$game_id]);
+        }
+        else
+        {
+            $isXeri = true;
+            $column = $player_id == $game['player1_id'] ? 'p1_xeri_count' : 'p2_xeri_count';
+            $pdo->prepare("UPDATE games SET $column = $column + 1 WHERE id = ?")->execute([$game_id]);
+        }
     } else {
         $capturedCards = $tableCards;
         $capturedCards[] = $playedCard;
