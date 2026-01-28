@@ -1,13 +1,15 @@
 <?php
 $db = 'adise25';
 require_once "db_upass.php"; 
-$user = $DB_USER;
-$pass = $DB_PASS;
 
 if (gethostname() === 'users.iee.ihu.gr') {
-    $dsn = "mysql:unix_socket=/run/mysqld/mysqld.sock;dbname=$db;charset=utf8mb4";
+    $dsn  = "mysql:unix_socket=/run/mysqld/mysqld.sock;dbname=$db;charset=utf8mb4";
+    $user = null;
+    $pass = null;
 } else {
-    $dsn = "mysql:host=127.0.0.1;dbname=$db;charset=utf8mb4";
+    $dsn  = "mysql:host=127.0.0.1;dbname=$db;charset=utf8mb4";
+    $user = $DB_USER;
+    $pass = $DB_PASS;
 }
 
 try {
