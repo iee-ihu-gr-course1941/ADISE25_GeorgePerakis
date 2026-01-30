@@ -126,11 +126,10 @@ $pdo->prepare("UPDATE games SET current_turn = ? WHERE id = ?")
 function getGameBoard($pdo, $game_id) {
 
     $stmt = $pdo->prepare("
-        SELECT gc.id, gc.card_id, c.suit, c.value, gc.location
+        SELECT gc.id, gc.card_id, c.suit, c.value, gc.location, gc.played_at
         FROM game_cards gc
         JOIN cards c ON gc.card_id = c.id
         WHERE gc.game_id = ?
-        ORDER BY gc.id ASC
     ");
     $stmt->execute([$game_id]);
     $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -144,6 +143,8 @@ function getGameBoard($pdo, $game_id) {
         'deck' => 0
     ];
 
+    $tableTemp = [];
+
     foreach ($cards as $c) {
         if ($c['location'] === 'deck') {
             $board['deck']++;
@@ -151,7 +152,20 @@ function getGameBoard($pdo, $game_id) {
         }
 
         $str = strtoupper(substr($c['suit'],0,1)) . $c['value'];
-        $board[$c['location']][] = $str;
+
+        if ($c['location'] === 'table') {
+            $tableTemp[] = $c + ['str'=>$str];
+        } else {
+            $board[$c['location']][] = $str;
+        }
+    }
+
+    usort($tableTemp, function($a,$b){
+        return strtotime($b['played_at']) <=> strtotime($a['played_at']);
+    });
+
+    foreach ($tableTemp as $c) {
+        $board['table'][] = $c['str'];
     }
 
     return $board;
