@@ -3,25 +3,21 @@ header('Content-Type: application/json');
 require_once '../db_connect2.php';
 
 try {
-    // Decode input
     $data = json_decode(file_get_contents("php://input"), true);
     if (!isset($data['player_id'])) {
         throw new Exception("player_id is required");
     }
     $player_id = $data['player_id'];
 
-    // Prepare insert statement
     $stmt = $pdo->prepare("INSERT INTO games (player1_id, status) VALUES (?, ?)");
     if (!$stmt) {
         throw new Exception("Failed to prepare statement: " . implode(" | ", $pdo->errorInfo()));
     }
 
-    // Execute statement
     if (!$stmt->execute([$player_id, 'waiting'])) {
         throw new Exception("Failed to execute statement: " . implode(" | ", $stmt->errorInfo()));
     }
 
-    // Get last inserted ID
     $game_id = $pdo->lastInsertId();
     if (!$game_id) {
         throw new Exception("Failed to get lastInsertId");
