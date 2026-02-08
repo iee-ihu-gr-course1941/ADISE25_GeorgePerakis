@@ -3,41 +3,42 @@ header('Content-Type: application/json');
 require_once '../db_connect2.php';
 
 try {
-    // Decode input
     $data = json_decode(file_get_contents("php://input"), true);
-    if (!isset($data['player_id'])) {
-        throw new Exception("player_id is required");
-    }
-    $player_id = $data['player_id'];
 
-    // Prepare insert statement
-    $stmt = $pdo->prepare("INSERT INTO games (player1_id, status) VALUES (?, ?)");
-    if (!$stmt) {
-        throw new Exception("Failed to prepare statement: " . implode(" | ", $pdo->errorInfo()));
+    if (!isset($data['player_token'])) {
+        throw new Exception("player token is required");
     }
 
-    // Execute statement
-    if (!$stmt->execute([$player_id, 'waiting'])) {
-        throw new Exception("Failed to execute statement: " . implode(" | ", $stmt->errorInfo()));
+    $playerToken = $data['player_token'];
+
+    $stmt = $pdo->prepare(
+        "SELECT id FROM players WHERE token = ? LIMIT 1"
+    );
+    $stmt->execute([$playerToken]);
+
+    $player = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$player) {
+        throw new Exception("Invalid player token");
     }
 
-    // Get last inserted ID
-    $game_id = $pdo->lastInsertId();
-    if (!$game_id) {
-        throw new Exception("Failed to get lastInsertId");
-    }
+    $player_id = $player['id'];
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO games (player1_id, status) VALUES (?, ?)"
+    );
+    $stmt->execute([$player_id, 'waiting']);
 
     echo json_encode([
         "status" => "ok",
-        "game_id" => $game_id,
+        "game_id" => $pdo->lastInsertId(),
         "player1_id" => $player_id,
         "message" => "Game created, waiting for player 2"
     ]);
 
 } catch (Exception $e) {
+    http_response_code(400);
     echo json_encode([
         "status" => "error",
         "message" => $e->getMessage()
     ]);
-    exit;
 }

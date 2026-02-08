@@ -4,17 +4,30 @@ require_once '../db_connect2.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-if (!isset($data['game_id']) || !isset($data['player2_id'])) {
-    echo json_encode(["error" => "game_id and player2_id are required"]);
+if (!isset($data['game_id']) || !isset($data['player_token'])) {
+    echo json_encode(["error" => "game_id and player_token are required"]);
     exit;
 }
 
-$game_id = $data['game_id'];
-$player2_id = $data['player2_id'];
+$game_id = (int)$data['game_id'];
+$playerToken = $data['player_token'];
+
+$stmt = $pdo->prepare(
+    "SELECT id FROM players WHERE token = ? LIMIT 1"
+);
+$stmt->execute([$playerToken]);
+
+$player = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$player) {
+    echo json_encode(["error" => "Invalid player token"]);
+    exit;
+}
+
+$player2_id = (int)$player['id'];
 
 $stmt = $pdo->prepare("SELECT * FROM games WHERE id = ?");
 $stmt->execute([$game_id]);
-$game = $stmt->fetch();
+$game = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$game) {
     echo json_encode(["error" => "Game not found"]);
@@ -26,9 +39,14 @@ if ($game['status'] !== 'waiting') {
     exit;
 }
 
+if ((int)$game['player1_id'] === $player2_id) {
+    echo json_encode(["error" => "Player cannot join their own game"]);
+    exit;
+}
+
 $stmt = $pdo->prepare("
-    UPDATE games 
-    SET player2_id = ?, status = 'playing', current_turn = player1_id 
+    UPDATE games
+    SET player2_id = ?, status = 'playing', current_turn = player1_id
     WHERE id = ?
 ");
 $stmt->execute([$player2_id, $game_id]);

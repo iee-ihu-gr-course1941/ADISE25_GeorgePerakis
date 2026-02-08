@@ -7,7 +7,7 @@ The relevant curls are in the PS_requests.txt.
 These commands are made for PowerShell.
 
 1. Login
-Authenticate the player or players.
+Authenticate the player.
 
 2. Make Game
 Create a new game session.

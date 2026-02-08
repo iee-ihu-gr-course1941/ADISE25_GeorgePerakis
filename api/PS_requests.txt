@@ -1,4 +1,4 @@
-# Login / Create User
+# Login
 Invoke-RestMethod -Uri https://users.iee.ihu.gr/~iee2021129/ADISE25_GeorgePerakis/api/auth/login.php `
                   -Method POST `
                   -Body '{"username":"giorgos"}' `
