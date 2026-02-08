@@ -52,7 +52,7 @@ if ((int)$game['player1_id'] === $player2_id) {
 
 $stmt = $pdo->prepare("
     UPDATE games
-    SET player2_id = ?, status = 'playing', current_turn = player1_id
+    SET player2_id = ?, status = 'active', current_turn = player1_id
     WHERE id = ?
 ");
 $stmt->execute([$player2_id, $game_id]);

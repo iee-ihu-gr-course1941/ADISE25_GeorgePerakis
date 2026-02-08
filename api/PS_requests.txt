@@ -5,10 +5,11 @@ Invoke-RestMethod -Uri https://users.iee.ihu.gr/~iee2021129/ADISE25_GeorgePeraki
                   -ContentType "application/json" | ConvertTo-Json -Depth 5
 
 # Create a new game
-Invoke-RestMethod -Uri https://users.iee.ihu.gr/~iee2021129/ADISE25_GeorgePerakis/api/game/create_game.php `
-                  -Method POST `
-                  -Body '{"player_id":1}' `
-                  -ContentType "application/json" | ConvertTo-Json -Depth 5
+Invoke-RestMethod `-Uri "https://users.iee.ihu.gr/~iee2021129/ADISE25_GeorgePerakis/api/game/create_game.php" `
+  		   -Method POST `
+  		   -Body '{"player_token":"799d8bcd8085e6a9eb5477c48ee566ed"}' `
+  		   -ContentType "application/json"
+
 
 # Join the game as player 2
 Invoke-RestMethod -Uri https://users.iee.ihu.gr/~iee2021129/ADISE25_GeorgePerakis/api/game/join_game.php `
