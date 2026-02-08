@@ -6,17 +6,29 @@ try {
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-if (!isset($data['game_id'], $data['player_id'], $data['position'])) {
-    throw new Exception("game_id, player_id and position are required");
+if (!isset($data['game_id'], $data['player_token'], $data['position'])) {
+    throw new Exception("game_id, player_token and position are required");
 }
 
-$game_id   = (int)$data['game_id'];
-$player_id = (int)$data['player_id'];
-$position  = (int)$data['position'];
+$game_id      = (int)$data['game_id'];
+$playerToken  = $data['player_token'];
+$position     = (int)$data['position'];
 
 if ($position < 1) {
     throw new Exception("Position must be 1 or higher");
 }
+
+/* ---------------- RESOLVE TOKEN ---------------- */
+
+$stmt = $pdo->prepare("SELECT id FROM players WHERE token = ? LIMIT 1");
+$stmt->execute([$playerToken]);
+$player = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$player) {
+    throw new Exception("Invalid player token");
+}
+
+$player_id = (int)$player['id'];
 
 /* ---------------- GAME ---------------- */
 
@@ -34,6 +46,8 @@ if ($game['current_turn'] && $game['current_turn'] != $player_id) {
 
 $handLocation = $player_id == $game['player1_id'] ? 'p1_hand' : 'p2_hand';
 
+/* ---------------- HAND ---------------- */
+
 $stmt = $pdo->prepare("
     SELECT gc.id, gc.card_id, c.suit, c.value
     FROM game_cards gc
@@ -45,7 +59,9 @@ $stmt->execute([$game_id, $handLocation]);
 $hand = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($position > count($hand)) {
-    throw new Exception("Position out of range. Hand has " . count($hand) . " cards.");
+    throw new Exception(
+        "Position out of range. Hand has " . count($hand) . " cards."
+    );
 }
 
 $playedCard = $hand[$position - 1];
@@ -77,10 +93,14 @@ if ($lastCard && ($lastCard['value'] === $playedCard['value'] || $playedCard['va
 
         if ($lastCard['value'] === 'J') {
             $isBalesXeri = true;
-            $column = $player_id == $game['player1_id'] ? 'p1_xeri_bales_count' : 'p2_xeri_bales_count';
+            $column = $player_id == $game['player1_id']
+                ? 'p1_xeri_bales_count'
+                : 'p2_xeri_bales_count';
         } else {
             $isXeri = true;
-            $column = $player_id == $game['player1_id'] ? 'p1_xeri_count' : 'p2_xeri_count';
+            $column = $player_id == $game['player1_id']
+                ? 'p1_xeri_count'
+                : 'p2_xeri_count';
         }
 
         $pdo->prepare("UPDATE games SET $column = $column + 1 WHERE id = ?")
@@ -90,13 +110,19 @@ if ($lastCard && ($lastCard['value'] === $playedCard['value'] || $playedCard['va
     $capturedCards = $tableCards;
     $capturedCards[] = $playedCard;
 
-    $capturedLocation = $player_id == $game['player1_id'] ? 'p1_captured' : 'p2_captured';
+    $capturedLocation = $player_id == $game['player1_id']
+        ? 'p1_captured'
+        : 'p2_captured';
 
     $ids = array_column($capturedCards, 'card_id');
 
     if (!empty($ids)) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $sql = "UPDATE game_cards SET location = ? WHERE game_id = ? AND card_id IN ($placeholders)";
+        $sql = "
+            UPDATE game_cards
+            SET location = ?
+            WHERE game_id = ? AND card_id IN ($placeholders)
+        ";
         $params = array_merge([$capturedLocation, $game_id], $ids);
         $pdo->prepare($sql)->execute($params);
     }
@@ -106,8 +132,8 @@ if ($lastCard && ($lastCard['value'] === $playedCard['value'] || $playedCard['va
     /* ---- NORMAL PLAY ---- */
 
     $pdo->prepare("
-        UPDATE game_cards 
-        SET location = 'table', played_at = NOW() 
+        UPDATE game_cards
+        SET location = 'table', played_at = NOW()
         WHERE game_id = ? AND card_id = ?
     ")->execute([$game_id, $card_id]);
 }
@@ -154,13 +180,13 @@ function getGameBoard($pdo, $game_id) {
         $str = strtoupper(substr($c['suit'],0,1)) . $c['value'];
 
         if ($c['location'] === 'table') {
-            $tableTemp[] = $c + ['str'=>$str];
+            $tableTemp[] = $c + ['str' => $str];
         } else {
             $board[$c['location']][] = $str;
         }
     }
 
-    usort($tableTemp, function($a,$b){
+    usort($tableTemp, function($a, $b) {
         return strtotime($b['played_at']) <=> strtotime($a['played_at']);
     });
 
@@ -176,8 +202,13 @@ function getGameBoard($pdo, $game_id) {
 echo json_encode([
     "status" => "ok",
     "game_id" => $game_id,
-    "played_card" => strtoupper(substr($playedCard['suit'],0,1)) . $playedCard['value'],
-    "captured_cards" => array_map(fn($c) => strtoupper(substr($c['suit'],0,1)) . $c['value'], $capturedCards),
+    "played_card" =>
+        strtoupper(substr($playedCard['suit'],0,1)) . $playedCard['value'],
+    "captured_cards" =>
+        array_map(
+            fn($c) => strtoupper(substr($c['suit'],0,1)) . $c['value'],
+            $capturedCards
+        ),
     "xeri" => $isXeri,
     "bales_xeri" => $isBalesXeri,
     "board" => getGameBoard($pdo, $game_id)
