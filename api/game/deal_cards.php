@@ -54,7 +54,7 @@ $handsCounts = $stmt->fetch(PDO::FETCH_ASSOC);
 $p1_hand_count = $handsCounts['p1_count'];
 $p2_hand_count = $handsCounts['p2_count'];
 
-if (count($deck) < 36 && $p1_hand_count == 0 && $p2_hand_count == 0) {
+if (count($deck) == 0 && $p1_hand_count == 0 && $p2_hand_count == 0) {
     $stmt = $pdo->prepare("UPDATE games SET status = 'finished' WHERE id = ?");
     $stmt->execute([$game_id]);
     $game['status'] = 'finished'; 
